@@ -262,7 +262,10 @@ class WorkController(object):
         # error before the bootsteps could be initialized.
         if self.blueprint is not None:
             self.blueprint.stop(self, terminate=not warm)
-            self.blueprint.join()
+            if self.pool_cls.is_green:
+                self.blueprint.join()
+            else:
+                logger.error("trying to join when in nongreen mode")
 
     def reload(self, modules=None, reload=False, reloader=None):
         modules = self.app.loader.task_modules if modules is None else modules
