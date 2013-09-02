@@ -173,8 +173,9 @@ class Worker(_pool.Worker):
         # to accept work, this will tell the parent that the inqueue fd
         # is writable.
         self.outq.put((WORKER_UP, (pid, )))
-    def on_loop_stop(self, pid):
-        logger.error("Worker exited - pid %i",pid)
+    def on_loop_stop(self, pid, exitcode):
+        code = "FAIL" if exitcode is None else "OK"
+        logger.debug("Worker exited with code [%s] - pid %i",code,pid)
         signals.worker_process_shutdown.send(sender=None)
 
 class ResultHandler(_pool.ResultHandler):
