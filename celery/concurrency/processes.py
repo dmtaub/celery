@@ -176,8 +176,6 @@ class Worker(_pool.Worker):
     def on_loop_stop(self, pid):
         logger.error("Worker exited - pid %i",pid)
         signals.worker_process_shutdown.send(sender=None)
-        #from celery.contrib import rdb; rdb.set_trace()
-
 
 class ResultHandler(_pool.ResultHandler):
     """Handles messages from the pool processes."""
