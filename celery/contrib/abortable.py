@@ -130,8 +130,8 @@ class AbortableAsyncResult(AsyncResult):
         """
         # TODO: store_result requires all four arguments to be set,
         # but only status should be updated here
-        return self.backend.store_result(self.id, result=None,
-                                         status=ABORTED, traceback=None)
+        return self.backend.store_result(self.id, result=self.result,
+                                         status=ABORTED, traceback=self.traceback)
 
 
 class AbortableTask(Task):
