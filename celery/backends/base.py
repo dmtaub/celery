@@ -398,9 +398,13 @@ class KeyValueStoreBackend(BaseBackend):
     def _forget(self, task_id):
         self.delete(self.get_key_for_task(task_id))
 
-    def _store_result(self, task_id, result, status, traceback=None):
+    def _store_result(self, task_id, result, status, traceback=None, use_existing_children=False):
+        if use_existing_children:
+            kids = self.children
+        else:
+            kids = self.current_task_children()
         meta = {'status': status, 'result': result, 'traceback': traceback,
-                'children': self.current_task_children()}
+                'children': kids} 
         self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result
 
