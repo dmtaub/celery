@@ -220,18 +220,14 @@ class ResultHandler(_pool.ResultHandler):
             try:
                 if reader.poll(0):
                     ready, task = True, reader.recv()
+                    # task is done, remove pid from record
                     self.on_process_complete(task, proc.pid)
-                    #if task[0] == 1 and self.pids_running_tasks.has_key(proc.name):
-                    #     self.pids_running_tasks.pop(proc.name)
-                    #     logger.error("yes %d"%task[0])
-                    #else:
-                    #     logger.error("no %d"%task[0])
                 else:
                     ready, task = False, None
             except (IOError, EOFError) as exc:
                 debug('result handler got %r -- exiting', exc)
                 raise CoroStop()
-            
+
             if self._state:
                 assert self._state == TERMINATE
                 debug('result handler found thread._state==TERMINATE')
@@ -252,8 +248,6 @@ class ResultHandler(_pool.ResultHandler):
             try:
                 it.send(fileno)
             except (StopIteration, CoroStop):
-                #workername=self.fileno_to_outq[fileno].name
-                #self.on_process_complete((1), workername)
                 self._it = None
 
     def on_stop_not_started(self):
@@ -320,8 +314,7 @@ class AsynPool(_pool.Pool):
         # synqueue fileno -> process mapping
         self._fileno_to_synq = {}
 
-        
-        # outqueue fileno -> running task mapping (currently just a set of running)
+        # outqueue fileno -> running task [currently ->(name,outq_fd)]
         self._pids_running_tasks = {}
 
         # denormalized set of all inqueues.
@@ -495,7 +488,6 @@ class AsynPool(_pool.Pool):
         self._put_back = outbound.appendleft
         precalc = {ACK: self._create_payload(ACK, (0, )),
                    NACK: self._create_payload(NACK, (0, ))}
-        #self.lastfntt = None
         def on_poll_start():
             # called for every event loop iteration, and if there
             # are messages pending this will schedule writing one message
@@ -511,10 +503,6 @@ class AsynPool(_pool.Pool):
                 [hub_add(fd, None, WRITE | ERR, consolidate=True)
                  for fd in diff(active_writes)]
 
-            #if not self.lastfntt == set(pids_running_tasks.keys()):
-            #    logger.error(pids_running_tasks)
-            #self.lastfntt = set(pids_running_tasks.keys())
-            
         self.on_poll_start = on_poll_start
 
         def on_inqueue_close(fd):
@@ -533,7 +521,7 @@ class AsynPool(_pool.Pool):
             shuffle(ready_fds)
             for ready_fd in ready_fds:
                 if ready_fd in active_writes:
-                    # already writing to this fd 
+                    # already writing to this fd
                     continue
                 assoc_inq = fileno_to_inq.get(ready_fd)
                 if assoc_inq and pids_running_tasks.has_key(assoc_inq.pid):
@@ -640,7 +628,6 @@ class AsynPool(_pool.Pool):
                     errors = 0
             finally:
                 write_stats[proc.index] += 1
-                #pids_running_tasks[proc.name]=fd # but task running, so dont use til removed
                 # message written, so this fd is now available
                 active_writes.discard(fd)
                 write_generator_done(job._writer())  # is a weakref
