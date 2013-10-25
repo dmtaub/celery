@@ -488,6 +488,7 @@ class AsynPool(_pool.Pool):
         self._put_back = outbound.appendleft
         precalc = {ACK: self._create_payload(ACK, (0, )),
                    NACK: self._create_payload(NACK, (0, ))}
+
         def on_poll_start():
             # called for every event loop iteration, and if there
             # are messages pending this will schedule writing one message
